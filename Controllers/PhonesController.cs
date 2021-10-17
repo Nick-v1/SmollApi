@@ -24,10 +24,14 @@ namespace SmollApi.Controllers
             return await _phoneRepository.Get();
         }
 
-        [HttpGet("{phoneID}")]
-        public async Task<ActionResult<Phones>> GetPhones(int phoneID)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Phones>> GetPhones(int id)
         {
-            return await _phoneRepository.Get(phoneID);
+            var phoneToGet = await _phoneRepository.Get(id);
+            if (phoneToGet == null)
+                return NotFound();
+
+            return await _phoneRepository.Get(id);
         }
         [HttpPost]
         public async Task<ActionResult<Phones>> PostPhones([FromBody] Phones phone)
@@ -36,10 +40,10 @@ namespace SmollApi.Controllers
             return CreatedAtAction(nameof(GetPhones), new { phoneID = newPhone.id }, newPhone);
         }
 
-        [HttpPut]
-        public async Task<ActionResult> PutPhones(int phoneID, [FromBody] Phones phone)
+        [HttpPut("{id}")]
+        public async Task<ActionResult> PutPhones(int id, [FromBody] Phones phone)
         {
-            if (phoneID != phone.id) {
+            if (id != phone.id) {
                 return BadRequest();
             }
             await _phoneRepository.Update(phone);
