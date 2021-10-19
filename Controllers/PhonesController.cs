@@ -43,9 +43,11 @@ namespace SmollApi.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult> PutPhones(int id, [FromBody] Phones phone)
         {
-            if (id != phone.id) {
-                return BadRequest();
-            }
+            
+            phone.id = id;
+            if (await _phoneRepository.Get(phone.id) == null) // if phone doesn't exist return not found
+                return NotFound();
+            
             await _phoneRepository.Update(phone);
 
             return NoContent();

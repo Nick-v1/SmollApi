@@ -31,6 +31,13 @@ namespace SmollApi
         {
             services.AddScoped<IPhoneRepository, PhoneRepository>();
             services.AddDbContext<PhoneContext>(o => o.UseSqlite("Data source=phones.db"));
+
+            services.AddScoped<IProductRepository, ProductRepository>();
+            services.AddDbContext<ProductContext>(o => o.UseSqlite("Data source=products.db"));
+            
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddDbContext<UserContext>(o => o.UseSqlite("Data source=users.db"));
+
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
