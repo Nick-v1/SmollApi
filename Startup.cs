@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -7,12 +8,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SmollApi.Models;
 using SmollApi.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace SmollApi
@@ -29,14 +32,29 @@ namespace SmollApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = Configuration["Jwt:Issuer"],
+                        ValidAudience = Configuration["Jwt:Issuer"],
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+                    };
+                });  // see
+
             services.AddScoped<IPhoneRepository, PhoneRepository>();
-            services.AddDbContext<PhoneContext>(o => o.UseSqlite("Data source=phones.db"));
+            services.AddDbContext<PhoneContext>(o => o.UseSqlite("Data source=phones.db")); //change
 
             services.AddScoped<IProductRepository, ProductRepository>();
-            services.AddDbContext<ProductContext>(o => o.UseSqlite("Data source=products.db"));
-            
+            services.AddDbContext<ProductContext>(o => o.UseSqlite("Data source=products.db"));//change
+
             services.AddScoped<IUserRepository, UserRepository>();
-            services.AddDbContext<UserContext>(o => o.UseSqlite("Data source=users.db"));
+            services.AddDbContext<UserContext>(o => o.UseSqlite("Data source=users.db"));//change
 
             services.AddControllers();
             services.AddSwaggerGen(c =>
