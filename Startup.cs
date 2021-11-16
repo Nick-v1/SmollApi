@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -11,12 +10,13 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SmollApi.Models;
-using SmollApi.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using SmollApi.Repositories;
 
 namespace SmollApi
 {
@@ -47,16 +47,13 @@ namespace SmollApi
                     };
                 });  // see
 
-            services.AddScoped<IPhoneRepository, PhoneRepository>();
-            services.AddDbContext<PhoneContext>(o => o.UseSqlite("Data source=phones.db")); //change
-
-            services.AddScoped<IProductRepository, ProductRepository>();
-            services.AddDbContext<ProductContext>(o => o.UseSqlite("Data source=products.db"));//change
-
-            services.AddScoped<IUserRepository, UserRepository>();
-            services.AddDbContext<UserContext>(o => o.UseSqlite("Data source=users.db"));//change
-
             services.AddControllers();
+
+            services.AddTransient<IPhoneRepository,PhoneRepository>();
+
+            services.AddDbContext<EshopDBContext>(options => options.UseSqlServer(Configuration.GetConnectionString("EshopAppCon")));
+
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "SmollApi", Version = "v1" });
@@ -74,9 +71,9 @@ namespace SmollApi
             }
 
             app.UseHttpsRedirection();
-
+            
             app.UseRouting();
-
+            
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

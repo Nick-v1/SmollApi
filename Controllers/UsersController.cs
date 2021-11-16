@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿/*using Microsoft.AspNetCore.Mvc;
 using SmollApi.Models;
 using SmollApi.Repositories;
 using System;
@@ -69,3 +69,4 @@ namespace SmollApi.Controllers
         }
     }
 }
+*/

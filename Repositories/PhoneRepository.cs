@@ -7,15 +7,24 @@ using System.Threading.Tasks;
 
 namespace SmollApi.Repositories
 {
+
+    //public interface IPhoneRepository            moved to its own cs
+    //{
+    //    Task<IEnumerable<Phone>> Get();
+    //    Task<Phone> Get(int phoneID);
+    //    Task<Phone> Create(Phone phone);
+    //    Task Update(Phone phone);
+    //    Task Delete(int phoneID);
+    //}
     public class PhoneRepository : IPhoneRepository
     {
-        private readonly PhoneContext _context;
+        private readonly EshopDBContext _context;
 
-        public PhoneRepository(PhoneContext context)
-        {
+        public PhoneRepository(EshopDBContext context)
+        {   
             _context = context;
         }
-        public async Task<Phones> Create(Phones phone)
+        public async Task<Phone> Create(Phone phone)
         {
             _context.Phones.Add(phone);
             await _context.SaveChangesAsync();
@@ -30,20 +39,21 @@ namespace SmollApi.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<Phones>> Get()
+        public async Task<IEnumerable<Phone>> Get()
         {
-            return await _context.Phones.ToListAsync(); 
+            return await _context.Phones.ToListAsync();
         }
 
-        public async Task<Phones> Get(int phoneID)
+        public async Task<Phone> Get(int phoneID)
         {
             return await _context.Phones.FindAsync(phoneID);
         }
 
-        public async Task Update(Phones phone)
+        public async Task Update(Phone phone)
         {
-            _context.Entry(phone).State = EntityState.Modified;
+            _context.Phones.Update(phone);
             await _context.SaveChangesAsync();
         }
     }
+
 }

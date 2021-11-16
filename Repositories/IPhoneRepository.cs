@@ -8,11 +8,10 @@ namespace SmollApi.Repositories
 {
     public interface IPhoneRepository
     {
-        Task<IEnumerable<Phones>> Get();
-
-        Task<Phones> Get(int phoneID);
-        Task<Phones> Create(Phones phone);
-        Task Update(Phones phone);
+        Task<IEnumerable<Phone>> Get();
+        Task<Phone> Get(int phoneID);
+        Task<Phone> Create(Phone phone);
+        Task Update(Phone phone);
         Task Delete(int phoneID);
     }
 }

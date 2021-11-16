@@ -1,9 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using SmollApi.Models;
 using SmollApi.Repositories;
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -18,14 +22,15 @@ namespace SmollApi.Controllers
         {
             _phoneRepository = phoneRepository;
         }
+
         [HttpGet]
-        public async Task<IEnumerable<Phones>> GetPhones()
+        public async Task<IEnumerable<Phone>> GetPhones()
         {
             return await _phoneRepository.Get();
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Phones>> GetPhones(int id)
+        public async Task<ActionResult<Phone>> GetPhones(int id)
         {
             var phoneToGet = await _phoneRepository.Get(id);
             if (phoneToGet == null)
@@ -34,23 +39,23 @@ namespace SmollApi.Controllers
             return await _phoneRepository.Get(id);
         }
         [HttpPost]
-        public async Task<ActionResult<Phones>> PostPhones([FromBody] Phones phone)
+        public async Task<ActionResult<Phone>> PostPhones([FromBody] Phone phone)
         {
             var newPhone = await _phoneRepository.Create(phone);
-            return CreatedAtAction(nameof(GetPhones), new { phoneID = newPhone.id }, newPhone);
+            return CreatedAtAction(nameof(GetPhones), new { phoneID = newPhone.Id }, newPhone);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> PutPhones(int id, [FromBody] Phones phone)
+        public async Task<ActionResult> PutPhones(int id, [FromBody] Phone phone)
         {
-            
-            phone.id = id;
-            if (await _phoneRepository.Get(phone.id) == null) // if phone doesn't exist return not found
+            phone.SetId(id);
+
+            if (await _phoneRepository.Get(phone.Id) == null) // if phone doesn't exist return not found
                 return NotFound();
             
             await _phoneRepository.Update(phone);
 
-            return NoContent();
+            return Ok();
         }
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
@@ -59,7 +64,7 @@ namespace SmollApi.Controllers
             if (phoneToDelete == null)
                 return NotFound();
 
-            await _phoneRepository.Delete(phoneToDelete.id);
+            await _phoneRepository.Delete(phoneToDelete.Id);
             return NoContent();
         }
     }
