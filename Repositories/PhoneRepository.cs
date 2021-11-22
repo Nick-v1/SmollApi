@@ -8,15 +8,15 @@ using System.Threading.Tasks;
 namespace SmollApi.Repositories
 {
 
-    //public interface IPhoneRepository            moved to its own cs
-    //{
-    //    Task<IEnumerable<Phone>> Get();
-    //    Task<Phone> Get(int phoneID);
-    //    Task<Phone> Create(Phone phone);
-    //    Task Update(Phone phone);
-    //    Task Delete(int phoneID);
-    //}
-    public class PhoneRepository : IPhoneRepository
+        public interface IPhoneRepository          
+        {
+            Task<IEnumerable<Phone>> Get();
+            Task<Phone> Get(int phoneID);
+            Task<Phone> Create(Phone phone);
+            Task Update(Phone phone);
+            Task Delete(int phoneID);
+        }
+public class PhoneRepository : IPhoneRepository
     {
         private readonly EshopDBContext _context;
 

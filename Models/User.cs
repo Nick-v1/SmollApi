@@ -9,11 +9,26 @@ namespace SmollApi.Models
 {
     public class User
     {
-        int Id { get; set; }
-        string Username { get; set; }
-        string Email { get; set; }
-        string Password { get; set; }
-        string AccounType { get; set; }
-        bool verified { get; set; }
+        [Key]
+        public int Id { get; private set; }
+        public string Username { get; set; }
+        public string Email { get; set; }
+        public string Password { get; set; }
+        public string AccounType { get; private set; }
+        public byte Verified { get; private set; }
+
+        public void SetVerified(byte verbyte)
+        {
+            Verified = verbyte;
+        }
+
+        public void SetAccounType(string type)
+        {
+            AccounType = type;
+        }
+        public void SetId(int id)
+        {
+            Id = id;
+        }
     }
 }

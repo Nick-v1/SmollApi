@@ -11,7 +11,6 @@ namespace SmollApi.Models
     public class Product
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         string ListingId { get; set; }
         int ProductId { get; set; }
         int UserId { get; set; }

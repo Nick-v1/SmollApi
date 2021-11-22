@@ -1,4 +1,5 @@
-﻿/*using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using SmollApi.Models;
 using SmollApi.Repositories;
 using System;
@@ -19,54 +20,79 @@ namespace SmollApi.Controllers
             _userRepository = userRepository;
         }
         [HttpGet]
-        public async Task<IEnumerable<User>> GetUsers()
+        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
-            return await _userRepository.Get();
+            return Ok(await _userRepository.Get());
         }
-        [HttpGet("{id}")]
+        [HttpGet("{id}")]           // for url path {}
         public async Task<ActionResult<User>> GetUser(int id)
         {
             var userToGet = await _userRepository.Get(id);
             if (userToGet == null)
                 return NotFound();
 
-            return userToGet;
+            return Ok(userToGet);
         }
 
         [HttpPost]
         public async Task<ActionResult<User>> RegisterUser([FromBody] User user)
         {
             var newUser = await _userRepository.Create(user);
-            return CreatedAtAction(nameof(GetUsers), new { newUser.id }, newUser);
+            
+            return CreatedAtAction(nameof(GetUsers), new { newUser.Id }, newUser);
         }
         
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateUser(int id, [FromBody] User user)
         {
-            user.id = id;
-            if (await _userRepository.Get(user.id) == null)
-                return NotFound();
+            try
+            {
+                user.SetId(id);
 
-            await _userRepository.Update(user);
+                if (id != user.Id)
+                    return BadRequest();
 
-            return NoContent();
+                if (await _userRepository.Get(user.Id) == null)
+                    return NotFound("User not found");
+
+                await _userRepository.Update(user);
+
+                return Ok($"User with id: {id} has been updated");
+            }
+            catch (Exception e)
+            { 
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                $"Error updating data = {e.Message}");
+            }
         }
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
         {
             var userToDelete = await _userRepository.Get(id);
             if (userToDelete == null)
-                return NotFound();
+                return NotFound("User Not Found");
 
-            await _userRepository.Delete(id);
+            await _userRepository.Delete(userToDelete);
             return NoContent();
         }
         [HttpPatch("/api/Users/verify/{id}")]
         public async Task<ActionResult> Verify(int id)
         {
-            await _userRepository.Verify(id);
-            return NoContent();
+            try
+            {
+                var UserToVerify = await _userRepository.Get(id);
+
+                if (UserToVerify == null)
+                    return NotFound($"User with id: {id} not found");
+
+                await _userRepository.Verify(id);
+
+                return Ok("User has been verified");
+            }
+            catch (Exception) {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                "Error updating data");
+            }
         }
     }
 }
-*/

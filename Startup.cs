@@ -50,6 +50,8 @@ namespace SmollApi
             services.AddControllers();
 
             services.AddTransient<IPhoneRepository,PhoneRepository>();
+            services.AddTransient<IUserRepository, UserRepository>();
+            services.AddTransient<IBanRepository, BanRepository>();
 
             services.AddDbContext<EshopDBContext>(options => options.UseSqlServer(Configuration.GetConnectionString("EshopAppCon")));
 

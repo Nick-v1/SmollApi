@@ -16,9 +16,7 @@ namespace SmollApi.Models
         {
             modelBuilder.Entity<Favourite>().HasNoKey();
             modelBuilder.Entity<Order>().HasNoKey();
-            modelBuilder.Entity<Ban>().HasNoKey();
             modelBuilder.Entity<Product>().HasNoKey();
-            modelBuilder.Entity<User>().HasNoKey();
         }
 
         public DbSet<Phone> Phones { get; set; }

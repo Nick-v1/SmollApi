@@ -24,9 +24,9 @@ namespace SmollApi.Controllers
         }
 
         [HttpGet]
-        public async Task<IEnumerable<Phone>> GetPhones()
+        public async Task<ActionResult<IEnumerable<Phone>>> GetPhones()
         {
-            return await _phoneRepository.Get();
+            return Ok(await _phoneRepository.Get());
         }
 
         [HttpGet("{id}")]
@@ -36,7 +36,7 @@ namespace SmollApi.Controllers
             if (phoneToGet == null)
                 return NotFound();
 
-            return await _phoneRepository.Get(id);
+            return Ok(await _phoneRepository.Get(id));
         }
         [HttpPost]
         public async Task<ActionResult<Phone>> PostPhones([FromBody] Phone phone)
