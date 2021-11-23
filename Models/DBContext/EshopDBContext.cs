@@ -14,7 +14,6 @@ namespace SmollApi.Models
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Favourite>().HasNoKey();
             modelBuilder.Entity<Order>().HasNoKey();
             modelBuilder.Entity<Product>().HasNoKey();
         }
