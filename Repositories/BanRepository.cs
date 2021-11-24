@@ -25,7 +25,7 @@ namespace SmollApi.Repositories
 
         public async Task<Ban> BanSomeone(Ban ban)
         {
-            ban.setDate(DateTime.Now);
+            ban.BannedDate = DateTime.Now;
             _context.Bans.Add(ban);
             
             await _context.SaveChangesAsync();

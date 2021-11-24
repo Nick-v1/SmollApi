@@ -27,8 +27,8 @@ namespace SmollApi.Repositories
 
         public async Task<User> Create(User user)
         {
-            user.SetAccounType("Basic");
-            user.SetVerified(0);
+            user.AccounType = "Basic";
+            user.Verified = 0;
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
             return user;
@@ -60,7 +60,7 @@ namespace SmollApi.Repositories
         public async Task Verify(int userID)
         {
             var userToVer = await _context.Users.FindAsync(userID);
-            userToVer.SetVerified(1);
+            userToVer.Verified = 1;
             await _context.SaveChangesAsync();
         }
     }

@@ -29,7 +29,7 @@ namespace SmollApi.Repositories
 
         public async Task<Favourite> addToFavourite(Favourite favourite, int UserID, int PhoneID)
         {
-            favourite.PhonesId = PhoneID;
+            favourite.PhoneId = PhoneID;
             favourite.UserId = UserID;
 
             //if (checkFav(UserID) == null)
@@ -44,8 +44,8 @@ namespace SmollApi.Repositories
 
         public async Task remove(Favourite fav)
         {
-            var favToDelete = await _context.Favourites.FindAsync(fav.PhonesId);
-            _context.Favourites.Remove(favToDelete);
+            _context.Favourites.Remove(fav);
+
             await _context.SaveChangesAsync();
         }
     }

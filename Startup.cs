@@ -47,7 +47,7 @@ namespace SmollApi
                     };
                 });  // see
 
-            services.AddControllers();
+            services.AddAutoMapper(typeof(Startup));
 
             services.AddTransient<IPhoneRepository,PhoneRepository>();
             services.AddTransient<IUserRepository, UserRepository>();
@@ -55,6 +55,7 @@ namespace SmollApi
             services.AddTransient<IFavouriteRepository, FavouriteRepository>();
 
             services.AddDbContext<EshopDBContext>(options => options.UseSqlServer(Configuration.GetConnectionString("EshopAppCon")));
+            services.AddControllers();
 
 
             services.AddSwaggerGen(c =>

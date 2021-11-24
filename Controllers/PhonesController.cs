@@ -48,12 +48,17 @@ namespace SmollApi.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult> PutPhones(int id, [FromBody] Phone phone)
         {
-            phone.SetId(id);
+            var phoneToChange = await _phoneRepository.Get(id);
+            if (phoneToChange == null) return NotFound();
 
-            if (await _phoneRepository.Get(phone.Id) == null) // if phone doesn't exist return not found
-                return NotFound();
-            
-            await _phoneRepository.Update(phone);
+            phoneToChange.Manifacturer = phone.Manifacturer;
+            phoneToChange.Name = phone.Name;                  //can implement mapper 
+            phoneToChange.OS = phone.OS;
+            phoneToChange.RAM = phone.RAM;
+            phoneToChange.ROM = phone.ROM;
+            phoneToChange.ScreenSize = phone.ScreenSize;
+
+            await _phoneRepository.Update(phoneToChange);
 
             return Ok();
         }

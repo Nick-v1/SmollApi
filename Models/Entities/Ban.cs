@@ -9,13 +9,10 @@ namespace SmollApi.Models
 {
     public class Ban
     {
-        [Key] public int UserID { get; set; }
-        public DateTime BannedDate { get; private set; }
-        public string reason { get; set; }
-
-        public void setDate(DateTime date)
-        {
-            BannedDate = date;
-        }
+        public int Id { get; set; }
+        public DateTime BannedDate { get; set; }
+        public string? Reason { get; set; }
+        public int UserId { get; set; }
+        public User User { get; set; }
     }
 }

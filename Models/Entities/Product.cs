@@ -10,11 +10,11 @@ namespace SmollApi.Models
 {
     public class Product
     {
-        [Key]
-        string ListingId { get; set; }
-        int ProductId { get; set; }
-        int UserId { get; set; }
-        DateTime registration { get; set; }
-        decimal price { get; set; }
+        public int Id { get; set; } //PK
+        public DateTime Registration { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Price { get; set; }
+        public int PhoneId { get; set; }//FK
+        public Phone Phone { get; set; }//nav
     }
 }

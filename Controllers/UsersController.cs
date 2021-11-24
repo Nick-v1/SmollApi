@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SmollApi.Models;
 using SmollApi.Repositories;
@@ -6,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SmollApi.Models.Dtos;
 
 namespace SmollApi.Controllers
 {
@@ -14,56 +16,76 @@ namespace SmollApi.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
+        private readonly IMapper _mapper;
 
-        public UsersController(IUserRepository userRepository)
+        public UsersController(IUserRepository userRepository, IMapper mapper)
         {
             _userRepository = userRepository;
+            _mapper = mapper;
         }
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        public async Task<ActionResult<IEnumerable<UserSearchDto>>> GetUsers()
         {
-            return Ok(await _userRepository.Get());
+            return Ok((await _userRepository.Get()).Select(o => _mapper.Map<UserSearchDto>(o)));
         }
         [HttpGet("{id}")]           // for url path {}
-        public async Task<ActionResult<User>> GetUser(int id)
+        public async Task<ActionResult<UserSearchDto>> GetUser(int id)
         {
             var userToGet = await _userRepository.Get(id);
             if (userToGet == null)
                 return NotFound();
 
-            return Ok(userToGet);
+            return Ok(_mapper.Map<UserSearchDto>(userToGet));
         }
 
-        [HttpPost]
-        public async Task<ActionResult<User>> RegisterUser([FromBody] User user)
+        [HttpPost("SignUp")]
+        public async Task<ActionResult<UserAccountManagement>> RegisterUser([FromBody] UserAccountManagement userDto)
         {
-            var newUser = await _userRepository.Create(user);
+            var user = _mapper.Map<User>(userDto);         // transforms userDto to User; //Also it needs this line: CreateMap<UserCreateAccountDto, User>(); on AutoMapperProfile
+            //var newUser = await _userRepository.Create(user);
+            //return CreatedAtAction(nameof(GetUsers), new { newUser.Id }, newUser);
+            await _userRepository.Create(user);
+            return Created($"/api/users/{user.Id}", _mapper.Map<UserAccountManagement>(user));
+        }
+        [HttpPost("/api/Users/Login")]
+        public async Task Login([FromBody] UserLoginDto userDto)
+        { 
+
+            //login method. to be implemented later;
+        }
+        [HttpPut("{id}")]          //user update
+        public async Task<ActionResult> UpdateUser(int id, [FromBody] UserAccountManagement userDto)
+        {
+            var user = await _userRepository.Get(id);
+            if (user == null)
+                return NotFound("User Not Found");
+
+            //user.Username = userDto.Username;
+            //user.Email = userDto.Email;           //or just use mapper;
+            //user.Password = userDto.Password;
+
+            _mapper.Map(userDto, user);            // <--
             
-            return CreatedAtAction(nameof(GetUsers), new { newUser.Id }, newUser);
+            await _userRepository.Update(user);
+
+            return Ok($"User with id: {id} has been updated");
         }
-        
-        [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateUser(int id, [FromBody] User user)
+        [HttpPut("{id}/Admin")]   //admin update
+        public async Task<ActionResult> UpdateUserAdmin(int id, [FromBody] UserDtoDetails userDto)
         {
-            try
-            {
-                user.SetId(id);
+            var user = await _userRepository.Get(id);
+            if (user == null)
+                return NotFound("User Not Found");
 
-                if (id != user.Id)
-                    return BadRequest();
+            //user.Username = userDto.Username;
+            //user.Email = userDto.Email;           //or just use mapper;
+            //user.Password = userDto.Password;
 
-                if (await _userRepository.Get(user.Id) == null)
-                    return NotFound("User not found");
+            _mapper.Map(userDto, user);            // <--
 
-                await _userRepository.Update(user);
+            await _userRepository.Update(user);
 
-                return Ok($"User with id: {id} has been updated");
-            }
-            catch (Exception e)
-            { 
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                $"Error updating data = {e.Message}");
-            }
+            return Ok($"User with id: {id} has been updated");
         }
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
@@ -78,8 +100,6 @@ namespace SmollApi.Controllers
         [HttpPatch("/api/Users/verify/{id}")]
         public async Task<ActionResult> Verify(int id)
         {
-            try
-            {
                 var UserToVerify = await _userRepository.Get(id);
 
                 if (UserToVerify == null)
@@ -88,11 +108,6 @@ namespace SmollApi.Controllers
                 await _userRepository.Verify(id);
 
                 return Ok("User has been verified");
-            }
-            catch (Exception) {
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                "Error updating data");
-            }
         }
     }
 }

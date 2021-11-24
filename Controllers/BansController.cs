@@ -27,7 +27,7 @@ namespace SmollApi.Controllers
         {
             try
             {
-                var userToBan = await _userRepository.Get(ban.UserID);
+                var userToBan = await _userRepository.Get(ban.UserId);
                 if (userToBan == null)
                     return NotFound("User not found");
 
@@ -62,7 +62,7 @@ namespace SmollApi.Controllers
             if (ban == null)
                 return Ok("User has no ban history");
 
-            return Ok($"User has ban logs\nThey were banned at: {ban.BannedDate}\nReason: {ban.reason}");
+            return Ok($"User has ban logs\nThey were banned at: {ban.BannedDate}\nReason: {ban.Reason}");
         }
 
         [HttpDelete("unban/{id}")]

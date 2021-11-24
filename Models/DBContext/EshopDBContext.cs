@@ -8,16 +8,14 @@ namespace SmollApi.Models
 {
     public class EshopDBContext : DbContext
     {
-        public EshopDBContext(DbContextOptions<EshopDBContext> options) : base(options)
-        {   
-        
-        }
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<Order>().HasNoKey();
-            modelBuilder.Entity<Product>().HasNoKey();
-        }
+        private readonly DbContextOptions<EshopDBContext> options;
 
+        public EshopDBContext(DbContextOptions<EshopDBContext> options) : base(options)
+        {
+            this.options = options;
+        }
+       
+        
         public DbSet<Phone> Phones { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<Product> Products { get; set; }
