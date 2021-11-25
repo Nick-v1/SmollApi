@@ -1,10 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using SmollApi.Models;
+using SmollApi.Models.Dtos;
 using SmollApi.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace SmollApi.Controllers
@@ -15,31 +13,55 @@ namespace SmollApi.Controllers
     {
         private readonly IBanRepository _banRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IMapper _mapper;
 
-        public BansController(IBanRepository banRepository, IUserRepository userRepository)
+        public BansController(IBanRepository banRepository, IUserRepository userRepository, IMapper mapper)
         {
             _banRepository = banRepository;
             _userRepository = userRepository;
+            _mapper = mapper;
         }
 
-        [HttpPost("User")]
-        public async Task<ActionResult<Ban>> Ban([FromBody] Ban ban)
+        [HttpPost("{UserId}")]
+        public async Task<ActionResult<BanDtoResult>> Ban(int UserId, [FromBody] BanDto banDto)
         {
-            try
-            {
-                var userToBan = await _userRepository.Get(ban.UserId);
-                if (userToBan == null)
-                    return NotFound("User not found");
+            
+            var userToBan = await _userRepository.Get(UserId);       // gets the user by id
+            if (userToBan == null)
+                return NotFound("User not found");                  //return not found if doesn't exist
 
-                await _banRepository.BanSomeone(ban);
+            if (userToBan.Status.Equals("Banned"))            //return msg if he's already banned
+                return Ok("User is already banned");
 
-                return CreatedAtAction(nameof(Ban), ban);
-            }
-            catch (Exception e)
-            {
-                return StatusCode(StatusCodes.Status302Found,
-                $"This user is already banned");
-            }
+            var ban = _mapper.Map<Ban>(banDto);              //map the dto FromBody to Ban
+
+            ban.User = userToBan;                           //set its values
+            ban.User.Status = "Banned";
+
+            await _banRepository.BanSomeone(ban);           //send it to repo for creation
+
+            return CreatedAtAction(nameof(Ban), _mapper.Map<BanDtoResult>(ban)); //return  response
+        }
+
+        [HttpPost("/api/unban")]
+        public async Task<ActionResult<BanDtoResult>> unBan([FromBody] UnbanDto Unbandto)
+        {
+            var user = await _userRepository.Get(Unbandto.UserId);     //gets the user by id
+
+            if (user == null)
+                return NotFound("User not found");             //checks if user exists
+
+
+            if (!user.Status.Equals("Banned"))                //checks if they are already unbanned
+                return Ok("User is not banned");
+
+            var ban = _mapper.Map<Ban>(Unbandto);            //map UnbanDto to Ban
+            ban.User = user;                                 //set Ban's User
+            ban.User.Status = "Unbanned";                    //change his status                       
+                
+            var banresult = await _banRepository.RevokeBan(ban);   //calls repo
+
+            return CreatedAtAction(nameof(unBan), _mapper.Map<BanDtoResult>(banresult)); //return result
         }
 
         [HttpGet]
@@ -49,40 +71,15 @@ namespace SmollApi.Controllers
 
             return Ok(banlist);
         }
-        [HttpGet("/CheckBan/{id}")]
-        public async Task<ActionResult<Ban>> checkBan(int id) 
+        [HttpGet("/api/checkBan/{BanId}")]
+        public async Task<ActionResult<Ban>> checkBan(int BanId) 
         {
-            var user = await _userRepository.Get(id);
-
-            if (user == null)
-                return NotFound("User does not exist");
-            
-            var ban = await _banRepository.checkBan(id);
+            var ban = await _banRepository.checkBan(BanId);
 
             if (ban == null)
-                return Ok("User has no ban history");
+                return NotFound();
 
-            return Ok($"User has ban logs\nThey were banned at: {ban.BannedDate}\nReason: {ban.Reason}");
+            return Ok(ban);
         }
-
-        [HttpDelete("unban/{id}")]
-        public async Task<ActionResult<Ban>> unBan(int id)
-        {
-            try
-            {
-                var user = await _userRepository.Get(id);
-
-                if (user == null)
-                    return NotFound("User does not exist");
-
-                await _banRepository.RevokeBan(id);
-
-                return NoContent();
-            } catch(Exception)
-            {
-                return StatusCode(StatusCodes.Status302Found, "This user is not banned");
-            }
-        }
-
     }
 }

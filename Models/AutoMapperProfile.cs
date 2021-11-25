@@ -12,6 +12,17 @@ namespace SmollApi.Models
             CreateMap<User, UserDtoDetails>();
             CreateMap<UserAccountManagement, User>();
             CreateMap<UserDtoDetails, User>();
+            //----------------------------------------
+            CreateMap<Phone, PhoneDto>();
+            CreateMap<PhoneDto, Phone>();
+            //----------------------------------------
+            CreateMap<BanDto, Ban>();
+            CreateMap<Ban, BanDtoResult>();
+            CreateMap<BanDtoResult, Ban>();
+            CreateMap<UnbanDto, Ban>();
+            //----------------------------------------
+            CreateMap<Favourite, FavouriteDto>();
+            CreateMap<FavouriteDto, Favourite>();
         }
     }
 }

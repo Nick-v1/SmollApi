@@ -1,4 +1,5 @@
-﻿using SmollApi.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using SmollApi.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,9 +9,10 @@ namespace SmollApi.Repositories
 {
     public interface IFavouriteRepository
     {
-        Task<Favourite> addToFavourite(Favourite favourite, int UserID, int PhoneID);
+        Task<Favourite> addToFavourite(Favourite favourite);
         Task<Favourite> checkFav(int id);
-
+        Task<IEnumerable<Favourite>> Get();
+        Task<IEnumerable<Favourite>> Get(int userId);
         Task remove(Favourite fav);
     }
     public class FavouriteRepository : IFavouriteRepository
@@ -22,19 +24,18 @@ namespace SmollApi.Repositories
             _context = context;
         }
 
+        public async Task<IEnumerable<Favourite>> Get()
+        {
+            return await _context.Favourites.ToListAsync();
+        }
         public async Task<Favourite> checkFav(int id)
         {
             return await _context.Favourites.FindAsync(id);
         }
 
-        public async Task<Favourite> addToFavourite(Favourite favourite, int UserID, int PhoneID)
+
+        public async Task<Favourite> addToFavourite(Favourite favourite)
         {
-            favourite.PhoneId = PhoneID;
-            favourite.UserId = UserID;
-
-            //if (checkFav(UserID) == null)
-            //    return favourite;
-
             _context.Favourites.Add(favourite);
 
             await _context.SaveChangesAsync();
@@ -48,5 +49,11 @@ namespace SmollApi.Repositories
 
             await _context.SaveChangesAsync();
         }
+
+
+        public async Task<IEnumerable<Favourite>> Get(int userId)
+        {
+            return (await _context.Favourites.ToListAsync()).Where(i => i.UserId == userId);
+        } // returns a list filtered by userid;
     }
 }

@@ -21,5 +21,6 @@ namespace SmollApi.Models
         
         [Required]
         public byte Verified { get; set; }
+        public string? Status { get; set; }
     }
 }

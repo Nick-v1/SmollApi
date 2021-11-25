@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Headers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using SmollApi.Models;
+using SmollApi.Models.Dtos;
 using SmollApi.Repositories;
 using System;
 using System.Collections.Generic;
@@ -18,15 +21,24 @@ namespace SmollApi.Controllers
     public class PhonesController : ControllerBase
     {
         private readonly IPhoneRepository _phoneRepository;
-        public PhonesController(IPhoneRepository phoneRepository)
+        private readonly IMapper _mapper;
+
+        public PhonesController(IPhoneRepository phoneRepository, IMapper mapper)
         {
             _phoneRepository = phoneRepository;
+            _mapper = mapper;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Phone>>> GetPhones()
         {
-            return Ok(await _phoneRepository.Get());
+            var phone = await _phoneRepository.Get();                                      //in 2 steps
+            //var phonedto = phone.Select(o => _mapper.Map<PhoneDto>(o));
+
+            //var phoneDto = (await _phoneRepository.Get()).Select(o => _mapper.Map<PhoneDto>(o));    //in 1 step
+
+            //return Ok((await _phoneRepository.Get()).Select(o => _mapper.Map<PhoneDto>(o))); // instant return in 1 line
+            return Ok(phone);
         }
 
         [HttpGet("{id}")]
@@ -39,28 +51,31 @@ namespace SmollApi.Controllers
             return Ok(await _phoneRepository.Get(id));
         }
         [HttpPost]
-        public async Task<ActionResult<Phone>> PostPhones([FromBody] Phone phone)
+        public async Task<ActionResult<Phone>> PostPhones([FromBody] PhoneDto phonedto)
         {
+            var phone = _mapper.Map<Phone>(phonedto);
             var newPhone = await _phoneRepository.Create(phone);
-            return CreatedAtAction(nameof(GetPhones), new { phoneID = newPhone.Id }, newPhone);
+            return CreatedAtAction(nameof(GetPhones), newPhone);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> PutPhones(int id, [FromBody] Phone phone)
+        public async Task<ActionResult> PutPhones(int id, [FromBody] PhoneDto phoneDto)
         {
             var phoneToChange = await _phoneRepository.Get(id);
             if (phoneToChange == null) return NotFound();
 
-            phoneToChange.Manifacturer = phone.Manifacturer;
-            phoneToChange.Name = phone.Name;                  //can implement mapper 
-            phoneToChange.OS = phone.OS;
-            phoneToChange.RAM = phone.RAM;
-            phoneToChange.ROM = phone.ROM;
-            phoneToChange.ScreenSize = phone.ScreenSize;
+            //phoneToChange.Manifacturer = phone.Manifacturer;
+            //phoneToChange.Name = phone.Name;                  //can implement mapper 
+            //phoneToChange.OS = phone.OS;
+            //phoneToChange.RAM = phone.RAM;
+            //phoneToChange.ROM = phone.ROM;
+            //phoneToChange.ScreenSize = phone.ScreenSize;
+
+            _mapper.Map(phoneDto, phoneToChange);
 
             await _phoneRepository.Update(phoneToChange);
 
-            return Ok();
+            return Ok(phoneToChange);
         }
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)

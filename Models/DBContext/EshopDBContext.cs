@@ -14,8 +14,7 @@ namespace SmollApi.Models
         {
             this.options = options;
         }
-       
-        
+
         public DbSet<Phone> Phones { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<Product> Products { get; set; }

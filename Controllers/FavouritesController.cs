@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using SmollApi.Models;
+using SmollApi.Models.Dtos;
 using SmollApi.Repositories;
 using System;
 using System.Collections.Generic;
@@ -15,54 +17,64 @@ namespace SmollApi.Controllers
         private readonly IFavouriteRepository _favouriteRepository;
         private readonly IUserRepository _userRepository;
         private readonly IPhoneRepository _phoneRepository;
+        private readonly IMapper _mapper;
 
-        public FavouritesController(IFavouriteRepository favouriteRepository, IUserRepository userRepository, IPhoneRepository phoneRepository)
+        public FavouritesController(IFavouriteRepository favouriteRepository, IUserRepository userRepository, IPhoneRepository phoneRepository, IMapper mapper)
         {
             _favouriteRepository = favouriteRepository;
             _userRepository = userRepository;
             _phoneRepository = phoneRepository;
+            _mapper = mapper;
         }
 
-        [HttpPost("/User/{UserID}/Favorites/{PhoneID}")]         //not complete
-        public async Task<ActionResult<Favourite>> addToFavs(int UserID, int PhoneID)
+        [HttpPost("/api/favorites")]         //not complete
+        public async Task<ActionResult<FavouriteDto>> addToFavs([FromBody] FavouriteDto f)
         {
-            var Phone = await _phoneRepository.Get(PhoneID);
-            var User = await _userRepository.Get(UserID);
+            var user = await _userRepository.Get(f.UserId);
+            var phone = await _phoneRepository.Get(f.PhoneId);
 
-            if (User == null)
-                return NotFound("User not found");
-            
-            if (Phone == null)
-                return NotFound("Phone not found");
+            if (user == null) return NotFound();
 
-            var fav = new Favourite();
+            if (phone == null) return NotFound();
 
-            fav.UserId = UserID;
-            fav.PhoneId = PhoneID;
+            var favourite = _mapper.Map<Favourite>(f);
 
-            await _favouriteRepository.addToFavourite(new Favourite(), UserID, PhoneID);
+            favourite.User = user;
+            favourite.Phone = phone;
 
-            return Ok();
+            await _favouriteRepository.addToFavourite(favourite);
+
+            return Ok(f);
         }
-        [HttpDelete("/User/{UserID}/Favorites/{PhoneID}")]
-        public async Task<ActionResult> delete(int UserID, int PhoneID)
+
+        [HttpDelete("/api/favorites")]
+        public async Task<ActionResult> delete(int FavId)
         {
-            var Phone = await _phoneRepository.Get(PhoneID);
-            var User = await _userRepository.Get(UserID);
+            var favourite = await _favouriteRepository.checkFav(FavId);
 
-            if (User == null)
-                return NotFound("User not found");
+            if (favourite == null)
+                return NotFound();
 
-            if (Phone == null)
-                return NotFound("Phone not found");
-
-            var fav = new Favourite();
-            fav.PhoneId = PhoneID;
-            fav.UserId = UserID;
-
-            await _favouriteRepository.remove(fav);
+            await _favouriteRepository.remove(favourite);
 
             return NoContent();
+        }
+
+        [HttpGet("/api/favorites")]
+        public async Task<ActionResult<FavouriteDto>> getFavs()
+        {
+            var favouriteslist = await _favouriteRepository.Get();
+
+            return Ok(favouriteslist.Select(o => _mapper.Map<FavouriteDto>(o))); 
+        }
+
+        [HttpGet("/api/favorites/{userId}")]
+        public async Task<ActionResult<FavouriteDto>> getFavs(int userId)
+        {
+            var filteredFavourites = await _favouriteRepository.Get(userId);    // returns filtered list 
+            var dto = filteredFavourites.Select(i => _mapper.Map<FavouriteDto>(i));     //maps each element of the list to dto list
+
+            return Ok(dto);
         }
     }
 }
