@@ -1,13 +1,13 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SmollApi.Models;
 using SmollApi.Repositories;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using SmollApi.Models.Dtos;
+using Microsoft.AspNetCore.Authorization;
+using System.Threading;
 
 namespace SmollApi.Controllers
 {
@@ -28,6 +28,7 @@ namespace SmollApi.Controllers
         {
             return Ok((await _userRepository.Get()).Select(o => _mapper.Map<UserSearchDto>(o)));
         }
+
         [HttpGet("{id}")]           // for url path {}
         public async Task<ActionResult<UserSearchDto>> GetUser(int id)
         {
@@ -39,18 +40,38 @@ namespace SmollApi.Controllers
         }
 
         [HttpPost("SignUp")]
-        public async Task<ActionResult<UserAccountManagement>> RegisterUser([FromBody] UserAccountManagement userDto)
+        [AllowAnonymous]
+        public async Task<ActionResult<User>> RegisterUser([FromBody] UserAccountManagement userDto)
         {
-            var user = _mapper.Map<User>(userDto);         // transforms userDto to User; //Also it needs this line: CreateMap<UserCreateAccountDto, User>(); on AutoMapperProfile
-            //var newUser = await _userRepository.Create(user);
-            //return CreatedAtAction(nameof(GetUsers), new { newUser.Id }, newUser);
-            await _userRepository.Create(user);
-            return Created($"/api/users/{user.Id}", _mapper.Map<UserAccountManagement>(user));
+            if (ModelState.IsValid)
+            {
+                var existingUser = await _userRepository.GetUserByEmail(userDto.Email);
+
+                if (existingUser.Count() > 0)
+                {
+                    return BadRequest("An account with this email already exists");
+                }
+
+                var user = _mapper.Map<User>(userDto);         // transforms userDto to User; //Also it needs this line: CreateMap<UserCreateAccountDto, User>(); on AutoMapperProfile
+                                                               //var newUser = await _userRepository.Create(user);
+                                                               //return CreatedAtAction(nameof(GetUsers), new { newUser.Id }, newUser);
+                user.AccounType = "Basic";
+                user.Verified = 0;
+                user.Status = "Active";
+
+                await _userRepository.Create(user);
+
+                return Created($"/api/users/{user.Id}", _mapper.Map<UserAccountManagement>(user));
+            }
+
+            return BadRequest("Invalid Payload");
         }
-        [HttpPost("/api/Users/Login")]
+
+        [HttpPost("/api/account/login")]
+        [AllowAnonymous]
         public async Task Login([FromBody] UserLoginDto userDto)
         { 
-
+            
             //login method. to be implemented later;
         }
         [HttpPut("{id}")]          //user update

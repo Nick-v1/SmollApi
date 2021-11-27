@@ -15,6 +15,7 @@ namespace SmollApi.Repositories
         Task Update(User user);
         Task Delete(User user);
         Task Verify(int userID);
+        Task<IEnumerable<User>> GetUserByEmail(string email);
     }
     public class UserRepository : IUserRepository
     {
@@ -27,9 +28,6 @@ namespace SmollApi.Repositories
 
         public async Task<User> Create(User user)
         {
-            user.AccounType = "Basic";
-            user.Verified = 0;
-            user.Status = "Active";
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
             return user;
@@ -49,6 +47,15 @@ namespace SmollApi.Repositories
         public async Task<User> Get(int phoneID)
         {
             return await _context.Users.FindAsync(phoneID);
+        }
+
+        public async Task<IEnumerable<User>> GetUserByEmail(string email)
+        {
+            var listuser = await _context.Users.ToListAsync();
+
+            var user = listuser.Where(o => o.Email == email).ToList();
+
+            return user;
         }
 
         public async Task Update(User user)

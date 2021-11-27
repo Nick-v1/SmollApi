@@ -23,6 +23,11 @@ namespace SmollApi.Models
             //----------------------------------------
             CreateMap<Favourite, FavouriteDto>();
             CreateMap<FavouriteDto, Favourite>();
+            //----------------------------------------
+            CreateMap<Product, ProductCREATEDto>();
+            CreateMap<ProductCREATEDto, Product>();
+            //----------------------------------------
+            CreateMap<OrderDto, Order>();
         }
     }
 }

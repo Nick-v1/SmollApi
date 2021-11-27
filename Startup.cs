@@ -17,6 +17,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SmollApi.Repositories;
+using Microsoft.AspNetCore.Identity;
 
 namespace SmollApi
 {
@@ -32,32 +33,20 @@ namespace SmollApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = Configuration["Jwt:Issuer"],
-                        ValidAudience = Configuration["Jwt:Issuer"],
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
-                    };
-                });  // see
-
             services.AddAutoMapper(typeof(Startup));
+
 
             services.AddTransient<IPhoneRepository,PhoneRepository>();
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IBanRepository, BanRepository>();
             services.AddTransient<IFavouriteRepository, FavouriteRepository>();
+            services.AddTransient<IProductRepository, ProductRepository>();
+            services.AddTransient<IOrderRepository, OrderRepository>();
 
             services.AddDbContext<EshopDBContext>(options => options.UseSqlServer(Configuration.GetConnectionString("EshopAppCon")));
+
+
             services.AddControllers();
-
-
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "SmollApi", Version = "v1" });
@@ -77,7 +66,8 @@ namespace SmollApi
             app.UseHttpsRedirection();
             
             app.UseRouting();
-            
+
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
