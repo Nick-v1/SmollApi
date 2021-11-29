@@ -17,7 +17,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SmollApi.Repositories;
-using Microsoft.AspNetCore.Identity;
 
 namespace SmollApi
 {
@@ -36,21 +35,41 @@ namespace SmollApi
             services.AddAutoMapper(typeof(Startup));
 
 
-            services.AddTransient<IPhoneRepository,PhoneRepository>();
+            services.AddTransient<IPhoneRepository, PhoneRepository>();
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IBanRepository, BanRepository>();
             services.AddTransient<IFavouriteRepository, FavouriteRepository>();
             services.AddTransient<IProductRepository, ProductRepository>();
             services.AddTransient<IOrderRepository, OrderRepository>();
+            services.AddTransient<ITokenService, TokenService>();
 
             services.AddDbContext<EshopDBContext>(options => options.UseSqlServer(Configuration.GetConnectionString("EshopAppCon")));
 
-
-            services.AddControllers();
-            services.AddSwaggerGen(c =>
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "SmollApi", Version = "v1" });
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = Configuration["Jwt:Issuer"],
+                    ValidAudience = Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new
+                    SymmetricSecurityKey
+                    (Encoding.UTF8.GetBytes
+                    (Configuration["Jwt:Key"]))
+                };
             });
+
+                services.AddControllers();
+                services.AddSwaggerGen(swagger =>
+                {
+                    swagger.SwaggerDoc("v1", new OpenApiInfo { Title = "SmollApi", Version = "v1" });
+                    
+                });
+            
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

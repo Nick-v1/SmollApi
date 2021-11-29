@@ -18,63 +18,119 @@ namespace SmollApi.Controllers
         private readonly IUserRepository _userRepository;
         private readonly IPhoneRepository _phoneRepository;
         private readonly IMapper _mapper;
+        private readonly ITokenService _tokenService;
 
-        public FavouritesController(IFavouriteRepository favouriteRepository, IUserRepository userRepository, IPhoneRepository phoneRepository, IMapper mapper)
+        public FavouritesController(IFavouriteRepository favouriteRepository, IUserRepository userRepository, IPhoneRepository phoneRepository, IMapper mapper, ITokenService tokenService)
         {
             _favouriteRepository = favouriteRepository;
             _userRepository = userRepository;
             _phoneRepository = phoneRepository;
             _mapper = mapper;
+            _tokenService = tokenService;
         }
 
         [HttpPost("/api/favorites")]         //not complete
-        public async Task<ActionResult<FavouriteDto>> addToFavs([FromBody] FavouriteDto f)
+        public async Task<ActionResult<FavouriteDto>> addToFavs([FromBody] FavouriteDto f, [FromHeader] string token)
         {
-            var user = await _userRepository.Get(f.UserId);
-            var phone = await _phoneRepository.Get(f.PhoneId);
+            var isValid = _tokenService.ValidateCurrentToken(token);
+            var emailClaim = _tokenService.GetClaim(token, "email");
 
-            if (user == null) return NotFound();
+            if (isValid)
+            {
+                var user = await _userRepository.Get(f.UserId);
+                if (emailClaim.Equals(user.Email))
+                {
+                    var phone = await _phoneRepository.Get(f.PhoneId);
 
-            if (phone == null) return NotFound();
+                    if (phone == null) return NotFound("Phone not found");
 
-            var favourite = _mapper.Map<Favourite>(f);
+                    var favourite = _mapper.Map<Favourite>(f);
 
-            favourite.User = user;
-            favourite.Phone = phone;
+                    favourite.User = user;
+                    favourite.Phone = phone;
 
-            await _favouriteRepository.addToFavourite(favourite);
+                    var list = await _favouriteRepository.Get(user.Id);
+                    var s = list.FirstOrDefault(o => o.UserId == user.Id && o.PhoneId == phone.Id);
 
-            return Ok(f);
+                    if (s == null)
+                    {
+                        await _favouriteRepository.addToFavourite(favourite);
+
+                        return Ok("You added an item to your favorites");
+                    }
+
+                    if (s.UserId == user.Id && s.PhoneId == phone.Id)
+                        return BadRequest("This item is already in your favorites");
+
+                }
+                return Unauthorized("You may only add favorites under your name");
+            }
+
+            return Unauthorized("Log in to add an item to your favorites");
         }
 
         [HttpDelete("/api/favorites")]
-        public async Task<ActionResult> delete(int FavId)
+        public async Task<ActionResult> delete(int FavId, [FromHeader] string token)
         {
-            var favourite = await _favouriteRepository.checkFav(FavId);
+            var isValid = _tokenService.ValidateCurrentToken(token);
+            var emailClaim = _tokenService.GetClaim(token, "email");
+            var roleClaim = _tokenService.GetClaim(token, "UserRole");
 
-            if (favourite == null)
-                return NotFound();
+            if (isValid)
+            {
+                var user = await _userRepository.GetUserByEmail(emailClaim);
 
-            await _favouriteRepository.remove(favourite);
+                var favourite = await _favouriteRepository.checkFav(FavId);
 
-            return NoContent();
+                if (favourite == null)
+                    return NotFound();
+
+                if (user.Id == favourite.UserId)
+                {
+                    await _favouriteRepository.remove(favourite);
+                    return NoContent();
+                }
+                else
+                    return Unauthorized("You can't remove others' items");
+            }
+
+            return Forbid();
         }
 
-        [HttpGet("/api/favorites")]
-        public async Task<ActionResult<FavouriteDto>> getFavs()
+        [HttpGet("/api/favorites/admin")]         //admin get
+        public async Task<ActionResult<FavouriteDto>> getFavs([FromHeader] string token)
         {
-            var favouriteslist = await _favouriteRepository.Get();
+            var isValid = _tokenService.ValidateCurrentToken(token);
+            var roleClaim = _tokenService.GetClaim(token, "UserRole");
 
-            return Ok(favouriteslist.Select(o => _mapper.Map<FavouriteDto>(o))); 
+            if (isValid)
+            {
+                if (roleClaim == "Admin")
+                {
+                    var favouriteslist = await _favouriteRepository.Get();
+
+                    return Ok(favouriteslist.Select(o => _mapper.Map<FavouriteDto>(o)));
+                }
+                return Unauthorized();
+            }
+
+            return Forbid();
         }
 
-        [HttpGet("/api/favorites/{userId}")]
-        public async Task<ActionResult<FavouriteDto>> getFavs(int userId)
+        [HttpGet("/api/favorites/{userId}")]  //gets someone's favourites. (Requires to be logged in)
+        public async Task<ActionResult<FavouriteDto>> getFavs(int userId, [FromHeader] string token)
         {
-            var filteredFavourites = await _favouriteRepository.Get(userId);    // returns filtered list 
-            var dto = filteredFavourites.Select(i => _mapper.Map<FavouriteDto>(i));     //maps each element of the list to dto list
+            var isValid = _tokenService.ValidateCurrentToken(token);
 
-            return Ok(dto);
+            if (isValid)
+            {
+                var filteredFavourites = await _favouriteRepository.Get(userId);    // returns filtered list 
+                var dto = filteredFavourites.Select(i => _mapper.Map<FavouriteDto>(i));     //maps each element of the list to dto list
+
+                return Ok(dto);
+            }
+
+            return Forbid();
         }
     }
 }

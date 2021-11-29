@@ -22,11 +22,13 @@ namespace SmollApi.Controllers
     {
         private readonly IPhoneRepository _phoneRepository;
         private readonly IMapper _mapper;
+        private readonly ITokenService _tokenService;
 
-        public PhonesController(IPhoneRepository phoneRepository, IMapper mapper)
+        public PhonesController(IPhoneRepository phoneRepository, IMapper mapper, ITokenService tokenService)
         {
             _phoneRepository = phoneRepository;
             _mapper = mapper;
+            _tokenService = tokenService;
         }
 
         [HttpGet]
@@ -51,41 +53,78 @@ namespace SmollApi.Controllers
             return Ok(await _phoneRepository.Get(id));
         }
         [HttpPost]
-        public async Task<ActionResult<Phone>> PostPhones([FromBody] PhoneDto phonedto)
+        public async Task<ActionResult<Phone>> PostPhones([FromBody] PhoneDto phonedto, [FromHeader]string token)
         {
-            var phone = _mapper.Map<Phone>(phonedto);
-            var newPhone = await _phoneRepository.Create(phone);
-            return CreatedAtAction(nameof(GetPhones), newPhone);
+            var isValid = _tokenService.ValidateCurrentToken(token);
+            var roleClaim = _tokenService.GetClaim(token, "UserRole");
+
+            if (isValid)
+            {
+                if (roleClaim.Equals("Merchant") || roleClaim.Equals("Admin"))
+                {
+                    var phone = _mapper.Map<Phone>(phonedto);
+                    var newPhone = await _phoneRepository.Create(phone);
+                    return CreatedAtAction(nameof(GetPhones), newPhone);
+                }
+                else
+                    return Unauthorized();
+            }
+
+            return Forbid();
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> PutPhones(int id, [FromBody] PhoneDto phoneDto)
+        public async Task<ActionResult> PutPhones(int id, [FromBody] PhoneDto phoneDto, [FromHeader] string token)
         {
-            var phoneToChange = await _phoneRepository.Get(id);
-            if (phoneToChange == null) return NotFound();
 
-            //phoneToChange.Manifacturer = phone.Manifacturer;
-            //phoneToChange.Name = phone.Name;                  //can implement mapper 
-            //phoneToChange.OS = phone.OS;
-            //phoneToChange.RAM = phone.RAM;
-            //phoneToChange.ROM = phone.ROM;
-            //phoneToChange.ScreenSize = phone.ScreenSize;
+            var isValid = _tokenService.ValidateCurrentToken(token);
+            var roleClaim = _tokenService.GetClaim(token, "UserRole");
 
-            _mapper.Map(phoneDto, phoneToChange);
+            if (isValid)
+            {
+                if (roleClaim.Equals("Admin"))
+                {
+                    var phoneToChange = await _phoneRepository.Get(id);
+                    if (phoneToChange == null) return NotFound();
 
-            await _phoneRepository.Update(phoneToChange);
+                    //phoneToChange.Manifacturer = phone.Manifacturer;
+                    //phoneToChange.Name = phone.Name;                  //can implement mapper 
+                    //phoneToChange.OS = phone.OS;
+                    //phoneToChange.RAM = phone.RAM;
+                    //phoneToChange.ROM = phone.ROM;
+                    //phoneToChange.ScreenSize = phone.ScreenSize;
 
-            return Ok(phoneToChange);
+                    _mapper.Map(phoneDto, phoneToChange);
+
+                    await _phoneRepository.Update(phoneToChange);
+
+                    return Ok(phoneToChange);
+                }
+                else return Unauthorized();
+            }
+            return Forbid();
         }
         [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(int id)
+        public async Task<ActionResult> Delete(int id, [FromHeader] string token)
         {
-            var phoneToDelete = await _phoneRepository.Get(id);
-            if (phoneToDelete == null)
-                return NotFound();
+            var isValid = _tokenService.ValidateCurrentToken(token);
+            var roleClaim = _tokenService.GetClaim(token, "UserRole");
 
-            await _phoneRepository.Delete(phoneToDelete.Id);
-            return NoContent();
+            if (isValid)
+            {
+                if (roleClaim.Equals("Admin"))
+                {
+                    var phoneToDelete = await _phoneRepository.Get(id);
+                    if (phoneToDelete == null)
+                        return NotFound();
+
+                    await _phoneRepository.Delete(phoneToDelete.Id);
+                    return NoContent();
+                }
+                else return Unauthorized();
+            }
+
+            return Forbid();
         }
     }
 }

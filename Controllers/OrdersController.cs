@@ -18,63 +18,111 @@ namespace SmollApi.Controllers
         private readonly IProductRepository _productRepository;
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
+        private readonly ITokenService _tokenService;
 
-        public OrdersController(IOrderRepository orderRepository, IProductRepository productRepository, IUserRepository userRepository, IMapper mapper)
+        public OrdersController(IOrderRepository orderRepository, IProductRepository productRepository, IUserRepository userRepository, IMapper mapper, ITokenService tokenService)
         {
             _orderRepository = orderRepository;
             _productRepository = productRepository;
             _userRepository = userRepository;
             _mapper = mapper;
+            _tokenService = tokenService;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Order>>> GetOrders()
+        public async Task<ActionResult<IEnumerable<Order>>> GetOrders([FromHeader] string token)
         {
-            return Ok(await _orderRepository.Get());
+            var isValid = _tokenService.ValidateCurrentToken(token);
+            var role = _tokenService.GetClaim(token, "UserRole");
+
+            if (isValid)
+            {
+                if (role.Equals("Merchant") || role.Equals("Admin"))
+                    return Ok(await _orderRepository.Get());
+
+                return Unauthorized();
+            }
+
+            return Forbid();
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Order>> GetOrder(int id)
+        public async Task<ActionResult<Order>> GetOrder(int id, [FromHeader] string token)
         {
-            var s = await _orderRepository.Get(id);
-            if (s == null) return NotFound();
+            var isValid = _tokenService.ValidateCurrentToken(token);
+            var role = _tokenService.GetClaim(token, "UserRole");
 
-            return Ok(s);
+            if (isValid)
+            {
+                if (role.Equals("Merchant") || role.Equals("Admin"))
+                {
+                    var s = await _orderRepository.Get(id);
+                    if (s == null) return NotFound();
+
+                    return Ok(s);
+                }
+                return Unauthorized();
+            }
+
+            return Forbid();
         }
 
         [HttpPost]
-        public async Task<ActionResult<Order>> CreateOrder([FromBody] OrderDto orderdto)
+        public async Task<ActionResult<Order>> CreateOrder([FromBody] OrderDto orderdto, [FromHeader] string token)
         {
+            var isValid = _tokenService.ValidateCurrentToken(token);
+            var email = _tokenService.GetClaim(token, "email");
+            var claimUser = await _userRepository.GetUserByEmail(email);
 
-            var product = await _productRepository.Get(orderdto.ProductId);
-            var user = await _userRepository.Get(orderdto.UserId);
+            if (isValid)
+            { 
+                var product = await _productRepository.Get(orderdto.ProductId);
+                var user = await _userRepository.Get(orderdto.UserId);
 
-            if (product == null) return NotFound();
+                if (user == claimUser)
+                {
+                    if (product == null) return NotFound();
 
-            if (user == null) return NotFound();
+                    if (user == null) return NotFound();
 
-            var order = _mapper.Map<Order>(orderdto);
+                    var order = _mapper.Map<Order>(orderdto);
 
-            order.Product = product;
-            order.User = user;
-            order.OrderDate = DateTime.Now;
+                    order.Product = product;
+                    order.User = user;
+                    order.OrderDate = DateTime.Now;
 
-            var orderc = await _orderRepository.Create(order);
+                    var orderc = await _orderRepository.Create(order);
 
-            return CreatedAtAction(nameof(CreateOrder), orderc);
+                    return CreatedAtAction(nameof(CreateOrder), orderc);
+                }
+                return Unauthorized("Something went wrong");
+            }
+
+            return Unauthorized("Log in to make an order");
         }
 
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteOrder(int id)
+        public async Task<ActionResult> DeleteOrder(int id, [FromHeader] string token)
         {
-            var order = await _orderRepository.Get(id);
+            var isValid = _tokenService.ValidateCurrentToken(token);
+            var role = _tokenService.GetClaim(token, "UserRole");
 
-            if (order == null)
-                return NotFound();
+            if (isValid)
+            {
+                if (role.Equals("Admin") || role.Equals("Merchant"))
+                {
+                    var order = await _orderRepository.Get(id);
 
-            await _orderRepository.Delete(order);
-            return NoContent();
+                    if (order == null)
+                        return NotFound();
+
+                    await _orderRepository.Delete(order);
+                    return NoContent();
+                }
+                return Unauthorized();
+            }
+            return Forbid();
         }
 
     }

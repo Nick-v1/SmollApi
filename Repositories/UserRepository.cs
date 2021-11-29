@@ -15,7 +15,7 @@ namespace SmollApi.Repositories
         Task Update(User user);
         Task Delete(User user);
         Task Verify(int userID);
-        Task<IEnumerable<User>> GetUserByEmail(string email);
+        Task<User> GetUserByEmail(string email);
     }
     public class UserRepository : IUserRepository
     {
@@ -49,11 +49,9 @@ namespace SmollApi.Repositories
             return await _context.Users.FindAsync(phoneID);
         }
 
-        public async Task<IEnumerable<User>> GetUserByEmail(string email)
+        public async Task<User> GetUserByEmail(string email)
         {
-            var listuser = await _context.Users.ToListAsync();
-
-            var user = listuser.Where(o => o.Email == email).ToList();
+            var user = await _context.Users.FirstOrDefaultAsync(i => i.Email == email);
 
             return user;
         }
