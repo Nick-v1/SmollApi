@@ -30,109 +30,119 @@ namespace SmollApi.Controllers
         [HttpPost("{UserId}")]
         public async Task<ActionResult<BanDtoResult>> Ban(int UserId, [FromBody] BanDto banDto, [FromHeader] string token)
         {
-            var isValid = _tokenService.ValidateCurrentToken(token);
-            var userRoleClaim = _tokenService.GetClaim(token, "UserRole");
-
-            if (isValid)
+            if (token != null)
             {
-                if (userRoleClaim.Equals("Admin"))
+                var isValid = _tokenService.ValidateCurrentToken(token);
+
+                if (isValid)
                 {
-                    var userToBan = await _userRepository.Get(UserId);       // gets the user by id
-                    if (userToBan == null)
-                        return NotFound("User not found");                  //return not found if doesn't exist
+                    var userRoleClaim = _tokenService.GetClaim(token, "UserRole");
+                    if (userRoleClaim.Equals("Admin"))
+                    {
+                        var userToBan = await _userRepository.Get(UserId);       // gets the user by id
+                        if (userToBan == null)
+                            return NotFound("User not found");                  //return not found if doesn't exist
 
-                    if (userToBan.Status.Equals("Banned"))            //return msg if he's already banned
-                        return Ok("User is already banned");
+                        if (userToBan.Status.Equals("Banned"))            //return msg if he's already banned
+                            return Ok("User is already banned");
 
-                    var ban = _mapper.Map<Ban>(banDto);              //map the dto FromBody to Ban
+                        var ban = _mapper.Map<Ban>(banDto);              //map the dto FromBody to Ban
 
-                    ban.User = userToBan;                           //set its values
-                    ban.User.Status = "Banned";
+                        ban.User = userToBan;                           //set its values
+                        ban.User.Status = "Banned";
 
-                    await _banRepository.BanSomeone(ban);           //send it to repo for creation
+                        await _banRepository.BanSomeone(ban);           //send it to repo for creation
 
-                    return CreatedAtAction(nameof(Ban), _mapper.Map<BanDtoResult>(ban)); //return  response
+                        return CreatedAtAction(nameof(Ban), _mapper.Map<BanDtoResult>(ban)); //return  response
+                    }
+                    else
+                        return Unauthorized("You don't have permissions to do that");
                 }
-                else
-                    return Unauthorized("You don't have permissions to do that");
             }
 
-            return Forbid();
+            return Unauthorized();
         }
 
         [HttpPost("/api/unban")]
         public async Task<ActionResult<BanDtoResult>> unBan([FromBody] UnbanDto Unbandto, [FromHeader] string token)
         {
-            var isValid = _tokenService.ValidateCurrentToken(token);
-            var userRoleClaim = _tokenService.GetClaim(token, "UserRole");
-
-            if (isValid)
+            if (token != null)
             {
-                if (userRoleClaim.Equals("Admin"))
+                var isValid = _tokenService.ValidateCurrentToken(token);
+
+                if (isValid)
                 {
-                    var user = await _userRepository.Get(Unbandto.UserId);     //gets the user by id
+                    var userRoleClaim = _tokenService.GetClaim(token, "UserRole");
+                    if (userRoleClaim.Equals("Admin"))
+                    {
+                        var user = await _userRepository.Get(Unbandto.UserId);     //gets the user by id
 
-                    if (user == null)
-                        return NotFound("User not found");             //checks if user exists
+                        if (user == null)
+                            return NotFound("User not found");             //checks if user exists
 
 
-                    if (!user.Status.Equals("Banned"))                //checks if they are already unbanned
-                        return Ok("User is not banned");
+                        if (!user.Status.Equals("Banned"))                //checks if they are already unbanned
+                            return Ok("User is not banned");
 
-                    var ban = _mapper.Map<Ban>(Unbandto);            //map UnbanDto to Ban
-                    ban.User = user;                                 //set Ban's User
-                    ban.User.Status = "Unbanned";                    //change his status                       
+                        var ban = _mapper.Map<Ban>(Unbandto);            //map UnbanDto to Ban
+                        ban.User = user;                                 //set Ban's User
+                        ban.User.Status = "Unbanned";                    //change his status                       
 
-                    var banresult = await _banRepository.RevokeBan(ban);   //calls repo
+                        var banresult = await _banRepository.RevokeBan(ban);   //calls repo
 
-                    return CreatedAtAction(nameof(unBan), _mapper.Map<BanDtoResult>(banresult)); //return result
+                        return CreatedAtAction(nameof(unBan), _mapper.Map<BanDtoResult>(banresult)); //return result
+                    }
+                    else
+                        return Unauthorized("You don't have permissions to do that");
                 }
-                else
-                    return Unauthorized("You don't have permissions to do that");
             }
-
-            return Forbid();
+            return Unauthorized();
         }
 
         [HttpGet]
         public async Task<ActionResult<Ban>> List([FromHeader]string token)
         {
-            var isValid = _tokenService.ValidateCurrentToken(token);
-            var userRoleClaim = _tokenService.GetClaim(token, "UserRole");
-
-            if (isValid)
+            if (token != null)
             {
-                if (userRoleClaim.Equals("Admin"))
+                var isValid = _tokenService.ValidateCurrentToken(token);
+                var userRoleClaim = _tokenService.GetClaim(token, "UserRole");
+
+                if (isValid)
                 {
-                    var banlist = await _banRepository.Get();
-                    return Ok(banlist);
+                    if (userRoleClaim.Equals("Admin"))
+                    {
+                        var banlist = await _banRepository.Get();
+                        return Ok(banlist);
+                    }
+                    return Unauthorized("You don't have permissions to do that");
                 }
-                else return Unauthorized("You don't have permissions to do that");
             }
-            return Forbid();
+            return Unauthorized();
         }
 
         [HttpGet("/api/checkban/{BanId}")]
         public async Task<ActionResult<Ban>> checkBan(int BanId, [FromHeader] string token) 
         {
-            var isValid = _tokenService.ValidateCurrentToken(token);
-            var userRoleClaim = _tokenService.GetClaim(token, "UserRole");
-
-            if (isValid)
+            if (token != null)
             {
-                if (userRoleClaim.Equals("Admin"))
+                var isValid = _tokenService.ValidateCurrentToken(token);
+                var userRoleClaim = _tokenService.GetClaim(token, "UserRole");
+
+                if (isValid)
                 {
-                    var ban = await _banRepository.checkBan(BanId);
+                    if (userRoleClaim.Equals("Admin"))
+                    {
+                        var ban = await _banRepository.checkBan(BanId);
 
-                    if (ban == null)
-                        return NotFound();
+                        if (ban == null)
+                            return NotFound();
 
-                    return Ok(ban);
+                        return Ok(ban);
+                    }
+                    else return Unauthorized("You don't have permissions to do that");
                 }
-                else return Unauthorized("You don't have permissions to do that");
             }
-
-            return Forbid();
+            return Unauthorized();
         }
     }
 }

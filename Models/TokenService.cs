@@ -19,7 +19,7 @@ namespace SmollApi.Models
 
     public class TokenService : ITokenService
     {
-        private const double EXPIRY_DURATION_MINUTES = 10;
+        private const int EXPIRY_DURATION_MINUTES = 1;
         private readonly IConfiguration configuration;
 
         public TokenService(IConfiguration configuration)
@@ -60,6 +60,12 @@ namespace SmollApi.Models
             return tokenHandler.WriteToken(token);
         }
 
+        /// <summary>
+        /// Authorisation method.
+        /// This method checks the token and returns true or false.
+        /// </summary>
+        /// <param name="token">the jwt token of the use</param>
+        /// <returns>boolean</returns>
         public bool ValidateCurrentToken(string token)
         {
             var secretKey = configuration.GetSection("Jwt:Key").ToString();

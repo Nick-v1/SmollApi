@@ -35,17 +35,21 @@ namespace SmollApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UserSearchDto>>> GetUsers([FromHeader]string token)
         {
-            var tokenvalid = _tokenService.ValidateCurrentToken(token);
+            if (token != null)
+            {
+                var tokenvalid = _tokenService.ValidateCurrentToken(token);
 
-            var claimValue = _tokenService.GetClaim(token, "UserRole");
+                if (tokenvalid)
+                {
+                    var claimValue = _tokenService.GetClaim(token, "UserRole");
 
-            if (tokenvalid == false)
-                return Unauthorized();
+                    if (claimValue.Equals("Basic") || claimValue.Equals("Admin"))
+                        return Ok((await _userRepository.Get()).Select(o => _mapper.Map<UserSearchDto>(o)));
 
-            if (claimValue.Equals("Basic") || claimValue.Equals("Admin"))
-                return Ok((await _userRepository.Get()).Select(o => _mapper.Map<UserSearchDto>(o)));
-
-            return Forbid();
+                    return Unauthorized();
+                }
+            }
+            return Unauthorized();
         }
 
         /// <summary>
@@ -61,22 +65,28 @@ namespace SmollApi.Controllers
         [HttpGet("{id}")]           // for url path {}
         public async Task<ActionResult<UserSearchDto>> GetUser(int id, [FromHeader] string token)
         {
-            var tokenvalid = _tokenService.ValidateCurrentToken(token);
-            var claimValue = _tokenService.GetClaim(token, "UserRole");
-
-            if (tokenvalid == false)
-                return Unauthorized();
-
-            if (claimValue.Equals("Admin"))
+            if (token != null)
             {
-                var userToGet = await _userRepository.Get(id);
-                if (userToGet == null)
-                    return NotFound();
 
-                return Ok(userToGet);
+                var tokenvalid = _tokenService.ValidateCurrentToken(token);
+
+                if (tokenvalid)
+                {
+                    var claimValue = _tokenService.GetClaim(token, "UserRole");
+
+                    if (claimValue.Equals("Admin"))
+                    {
+                        var userToGet = await _userRepository.Get(id);
+
+                        if (userToGet == null)
+                            return NotFound();
+
+                        return Ok(userToGet);
+                    }
+                    return Unauthorized();
+                }
             }
-
-            return Forbid();
+            return Unauthorized();
         }
 
         [HttpPost("signup")]
@@ -110,32 +120,37 @@ namespace SmollApi.Controllers
         [HttpPut("{id}")]          //user update
         public async Task<ActionResult> UpdateUser(int id, [FromBody] UserAccountManagement userDto, [FromHeader] string token)
         {
-            var isValid = _tokenService.ValidateCurrentToken(token);
-            var claim = _tokenService.GetClaim(token, JwtRegisteredClaimNames.Email);
 
-            if (isValid)
+            if (token != null)
             {
-                var user = await _userRepository.Get(id);
-                if (claim.Equals(user.Email))
+
+                var isValid = _tokenService.ValidateCurrentToken(token);
+
+                if (isValid)
                 {
-                    if (user == null)
-                        return NotFound("User Not Found");
+                    var claim = _tokenService.GetClaim(token, JwtRegisteredClaimNames.Email);
 
-                    //user.Username = userDto.Username;
-                    //user.Email = userDto.Email;           //or just use mapper;
-                    //user.Password = userDto.Password;
+                    var user = await _userRepository.Get(id);
+                    if (claim.Equals(user.Email))
+                    {
+                        if (user == null)
+                            return NotFound("User Not Found");
 
-                    _mapper.Map(userDto, user);            // <--
+                        //user.Username = userDto.Username;
+                        //user.Email = userDto.Email;           //or just use mapper;
+                        //user.Password = userDto.Password;
 
-                    await _userRepository.Update(user);
+                        _mapper.Map(userDto, user);            // <--
 
-                    return Ok($"User with id: {id} has been updated");
+                        await _userRepository.Update(user);
+
+                        return Ok($"User with id: {id} has been updated");
+                    }
+                    else
+                        return Unauthorized("You can't update another user\nYou may only update your account");
                 }
-                else
-                    return Unauthorized("You can't update another user\nYou may only update your account");
             }
-
-            return Forbid();
+            return Unauthorized();
         }
 
         /// <summary>
@@ -150,32 +165,37 @@ namespace SmollApi.Controllers
         [HttpPut("{id}/Admin")]   //admin update
         public async Task<ActionResult> UpdateUserAdmin(int id, [FromBody] UserDtoDetails userDto, [FromHeader]string token)
         {
-            var isValid = _tokenService.ValidateCurrentToken(token);
-            var claim = _tokenService.GetClaim(token, "UserRole");
-
-            if (isValid) //checks if the token is still valid
+            if (token != null)
             {
-                if (claim.Equals("Admin"))
+
+                var isValid = _tokenService.ValidateCurrentToken(token);
+
+                if (isValid) //checks if the token is still valid
                 {
-                    var user = await _userRepository.Get(id);
-                    if (user == null)
-                        return NotFound("User Not Found");
+                    var claim = _tokenService.GetClaim(token, "UserRole");
 
-                    //user.Username = userDto.Username;
-                    //user.Email = userDto.Email;           //or just use mapper;
-                    //user.Password = userDto.Password;
+                    if (claim.Equals("Admin"))
+                    {
+                        var user = await _userRepository.Get(id);
+                        if (user == null)
+                            return NotFound("User Not Found");
 
-                    _mapper.Map(userDto, user);            // <--
+                        //user.Username = userDto.Username;
+                        //user.Email = userDto.Email;           //or just use mapper;
+                        //user.Password = userDto.Password;
 
-                    await _userRepository.Update(user);
+                        _mapper.Map(userDto, user);            // <--
 
-                    return Ok($"User with id: {id} has been updated");
+                        await _userRepository.Update(user);
+
+                        return Ok($"User with id: {id} has been updated");
+                    }
+                    else
+                        return Unauthorized("You are not authorized to do that");
                 }
-                else
-                    return Unauthorized("You are not authorized to do that");
             }
             //if token is not valid returns 403
-            return Forbid();
+            return Unauthorized();
         }
 
 
@@ -188,25 +208,28 @@ namespace SmollApi.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id, [FromHeader] string token)
         {
-            var isValid = _tokenService.ValidateCurrentToken(token);
-            var claim = _tokenService.GetClaim(token, "UserRole");
-
-            if (isValid)
+            if (token != null)
             {
-                if (claim.Equals("Admin"))
+
+                var isValid = _tokenService.ValidateCurrentToken(token);
+
+                if (isValid)
                 {
-                    var userToDelete = await _userRepository.Get(id);
-                    if (userToDelete == null)
-                        return NotFound("User Not Found");
+                    var claim = _tokenService.GetClaim(token, "UserRole");
+                    if (claim.Equals("Admin"))
+                    {
+                        var userToDelete = await _userRepository.Get(id);
+                        if (userToDelete == null)
+                            return NotFound("User Not Found");
 
-                    await _userRepository.Delete(userToDelete);
-                    return NoContent();
+                        await _userRepository.Delete(userToDelete);
+                        return NoContent();
+                    }
+                    else
+                        return Unauthorized();
                 }
-                else
-                    return Unauthorized();
             }
-
-            return Forbid();
+            return Unauthorized();
         }
 
         /// <summary>
@@ -218,30 +241,31 @@ namespace SmollApi.Controllers
         [HttpPatch("/api/Users/verify/{id}")]
         public async Task<ActionResult> Verify(int id, [FromHeader] string token)
         {
-            var isValid = _tokenService.ValidateCurrentToken(token);
-            var claim = _tokenService.GetClaim(token, "UserRole");
-
-            if (isValid)
+            if (token != null)
             {
-                if (claim.Equals("Admin"))
+                var isValid = _tokenService.ValidateCurrentToken(token);
+
+                if (isValid)
                 {
-
-                    var UserToVerify = await _userRepository.Get(id);
-
-                    if (UserToVerify == null)
+                    var claim = _tokenService.GetClaim(token, "UserRole");
+                    if (claim.Equals("Admin"))
                     {
-                        return NotFound($"User with id: {id} not found");
+                        var UserToVerify = await _userRepository.Get(id);
+
+                        if (UserToVerify == null)
+                        {
+                            return NotFound($"User with id: {id} not found");
+                        }
+
+                        await _userRepository.Verify(id);
+
+                        return Ok("Successfully verified");
                     }
-
-                    await _userRepository.Verify(id);
-
-                    return Ok("Successfully verified");
+                    else
+                        return Unauthorized("Contact an admin in order to get verified");
                 }
-                else
-                    return Unauthorized("Contact an admin in order to get verified");
             }
-
-            return Forbid();
+            return Unauthorized();
         }
 
     }

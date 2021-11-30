@@ -32,70 +32,78 @@ namespace SmollApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Order>>> GetOrders([FromHeader] string token)
         {
-            var isValid = _tokenService.ValidateCurrentToken(token);
-            var role = _tokenService.GetClaim(token, "UserRole");
-
-            if (isValid)
+            if (token != null)
             {
-                if (role.Equals("Merchant") || role.Equals("Admin"))
-                    return Ok(await _orderRepository.Get());
+                var isValid = _tokenService.ValidateCurrentToken(token);
 
-                return Unauthorized();
+                if (isValid)
+                {
+                    var role = _tokenService.GetClaim(token, "UserRole");
+                    if (role.Equals("Merchant") || role.Equals("Admin"))
+                        return Ok(await _orderRepository.Get());
+
+                    return Unauthorized();
+                }
             }
-
-            return Forbid();
+            return Unauthorized();
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Order>> GetOrder(int id, [FromHeader] string token)
         {
-            var isValid = _tokenService.ValidateCurrentToken(token);
-            var role = _tokenService.GetClaim(token, "UserRole");
-
-            if (isValid)
+            if (token != null)
             {
-                if (role.Equals("Merchant") || role.Equals("Admin"))
-                {
-                    var s = await _orderRepository.Get(id);
-                    if (s == null) return NotFound();
+                var isValid = _tokenService.ValidateCurrentToken(token);
 
-                    return Ok(s);
+                if (isValid)
+                {
+                    var role = _tokenService.GetClaim(token, "UserRole");
+                    if (role.Equals("Merchant") || role.Equals("Admin"))
+                    {
+                        var s = await _orderRepository.Get(id);
+                        if (s == null) return NotFound();
+
+                        return Ok(s);
+                    }
+                    return Unauthorized();
                 }
-                return Unauthorized();
             }
 
-            return Forbid();
+            return Unauthorized();
         }
 
         [HttpPost]
         public async Task<ActionResult<Order>> CreateOrder([FromBody] OrderDto orderdto, [FromHeader] string token)
         {
-            var isValid = _tokenService.ValidateCurrentToken(token);
-            var email = _tokenService.GetClaim(token, "email");
-            var claimUser = await _userRepository.GetUserByEmail(email);
+            if (token != null)
+            {
+                var isValid = _tokenService.ValidateCurrentToken(token);
 
-            if (isValid)
-            { 
-                var product = await _productRepository.Get(orderdto.ProductId);
-                var user = await _userRepository.Get(orderdto.UserId);
-
-                if (user == claimUser)
+                if (isValid)
                 {
-                    if (product == null) return NotFound();
+                    var product = await _productRepository.Get(orderdto.ProductId);
+                    var user = await _userRepository.Get(orderdto.UserId);
+                    var email = _tokenService.GetClaim(token, "email");
+                    var claimUser = await _userRepository.GetUserByEmail(email);
 
-                    if (user == null) return NotFound();
+                    if (user == claimUser)
+                    {
+                        if (product == null) return NotFound();
 
-                    var order = _mapper.Map<Order>(orderdto);
+                        if (user == null) return NotFound();
 
-                    order.Product = product;
-                    order.User = user;
-                    order.OrderDate = DateTime.Now;
+                        var order = _mapper.Map<Order>(orderdto);
 
-                    var orderc = await _orderRepository.Create(order);
+                        order.Product = product;
+                        order.User = user;
+                        order.OrderDate = DateTime.Now;
 
-                    return CreatedAtAction(nameof(CreateOrder), orderc);
+                        var orderc = await _orderRepository.Create(order);
+
+                        return CreatedAtAction(nameof(CreateOrder), orderc);
+                    }
+                    return Unauthorized("Something went wrong");
                 }
-                return Unauthorized("Something went wrong");
             }
 
             return Unauthorized("Log in to make an order");
@@ -105,24 +113,28 @@ namespace SmollApi.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteOrder(int id, [FromHeader] string token)
         {
-            var isValid = _tokenService.ValidateCurrentToken(token);
-            var role = _tokenService.GetClaim(token, "UserRole");
-
-            if (isValid)
+            if (token != null)
             {
-                if (role.Equals("Admin") || role.Equals("Merchant"))
+
+                var isValid = _tokenService.ValidateCurrentToken(token);
+
+                if (isValid)
                 {
-                    var order = await _orderRepository.Get(id);
+                    var role = _tokenService.GetClaim(token, "UserRole");
+                    if (role.Equals("Admin") || role.Equals("Merchant"))
+                    {
+                        var order = await _orderRepository.Get(id);
 
-                    if (order == null)
-                        return NotFound();
+                        if (order == null)
+                            return NotFound();
 
-                    await _orderRepository.Delete(order);
-                    return NoContent();
+                        await _orderRepository.Delete(order);
+                        return NoContent();
+                    }
+                    return Unauthorized();
                 }
-                return Unauthorized();
             }
-            return Forbid();
+            return Unauthorized();
         }
 
     }

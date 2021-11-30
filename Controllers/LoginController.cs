@@ -26,16 +26,15 @@ namespace SmollApi.Controllers
         [HttpPost("/api/login")]
         public async Task<IActionResult> Login([FromBody] UserLoginDto login)
         {
-            IActionResult response = NotFound();
             var user = await AuthenticateUser(login);
 
             if (user != null)
             {
                 var generatedToken = _tokenService.GenerateToken(user);
-                return Ok(new { token = generatedToken, status = "Success" });
+                return Ok(new { token = generatedToken });
             }
 
-            return response;
+            return NotFound("User with this combination not found");
         }
 
         /// <summary>

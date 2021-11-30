@@ -46,78 +46,90 @@ namespace SmollApi.Controllers
         [HttpPost]
         public async Task<ActionResult<Product>> CreateProduct([FromBody] ProductCREATEDto productDto, int PhoneId, [FromHeader] string token)
         {
-            var isValid = _tokenService.ValidateCurrentToken(token);
-            var roleclaim = _tokenService.GetClaim(token, "UserRole");
-
-            if (isValid)
+            if (token != null)
             {
-                if (roleclaim.Equals("Admin") || roleclaim.Equals("Merchant"))
+
+                var isValid = _tokenService.ValidateCurrentToken(token);
+
+                if (isValid)
                 {
-                    var phone = await _phoneRepository.Get(PhoneId);
+                    var roleclaim = _tokenService.GetClaim(token, "UserRole");
 
-                    if (phone == null) return NotFound();
+                    if (roleclaim.Equals("Admin") || roleclaim.Equals("Merchant"))
+                    {
+                        var phone = await _phoneRepository.Get(PhoneId);
 
-                    var product = _mapper.Map<Product>(productDto);
+                        if (phone == null) return NotFound();
 
-                    product.Phone = phone;
-                    product.PhoneId = PhoneId;
+                        var product = _mapper.Map<Product>(productDto);
 
-                    var newProduct = await _productRepository.CreateProduct(product);
-                    return CreatedAtAction(nameof(GetProducts), newProduct);
+                        product.Phone = phone;
+                        product.PhoneId = PhoneId;
+
+                        var newProduct = await _productRepository.CreateProduct(product);
+                        return CreatedAtAction(nameof(GetProducts), newProduct);
+                    }
+                    return Unauthorized();
                 }
-                return Unauthorized();
             }
-            return Forbid();
+            return Unauthorized();
         }
 
         [HttpPatch("{id}")]
         public async Task<ActionResult<Product>> PatchProduct(int id, [FromBody] ProductCREATEDto productDto, [FromHeader] string token)
         {
-            var isValid = _tokenService.ValidateCurrentToken(token);
-            var roleclaim = _tokenService.GetClaim(token, "UserRole");
-
-            if (isValid)
+            if (token != null)
             {
-                if (roleclaim.Equals("Admin") || roleclaim.Equals("Merchant"))
+                var isValid = _tokenService.ValidateCurrentToken(token);
+
+                if (isValid)
                 {
-                    var productCheck = await _productRepository.Get(id);
+                    var roleclaim = _tokenService.GetClaim(token, "UserRole");
+                    if (roleclaim.Equals("Admin") || roleclaim.Equals("Merchant"))
+                    {
+                        var productCheck = await _productRepository.Get(id);
 
-                    if (productCheck == null)
-                        return NotFound();
+                        if (productCheck == null)
+                            return NotFound();
 
-                    var product = _mapper.Map<Product>(productCheck);
-                    product.Phone = productCheck.Phone;
-                    product.Price = productDto.price;
+                        var product = _mapper.Map<Product>(productCheck);
+                        product.Phone = productCheck.Phone;
+                        product.Price = productDto.price;
 
-                    return Ok(await _productRepository.Update(product));
+                        return Ok(await _productRepository.Update(product));
+                    }
+                    return Unauthorized();
                 }
-                return Unauthorized();
             }
-            return Forbid();
+            return Unauthorized();
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteProduct(int id, [FromHeader] string token)
         {
-            var isValid = _tokenService.ValidateCurrentToken(token);
-            var roleclaim = _tokenService.GetClaim(token, "UserRole");
-
-            if (isValid)
+            if (token != null)
             {
-                if (roleclaim.Equals("Admin") || roleclaim.Equals("Merchant"))
+                var isValid = _tokenService.ValidateCurrentToken(token);
+
+                if (isValid)
                 {
-                    var productToDelete = await _productRepository.Get(id);
+                    var roleclaim = _tokenService.GetClaim(token, "UserRole");
 
-                    if (productToDelete == null)
-                        return NotFound();
+                    if (roleclaim.Equals("Admin") || roleclaim.Equals("Merchant"))
+                    {
+                        var productToDelete = await _productRepository.Get(id);
 
-                    await _productRepository.DeleteProduct(productToDelete);
+                        if (productToDelete == null)
+                            return NotFound();
 
-                    return NoContent();
+                        await _productRepository.DeleteProduct(productToDelete);
+
+                        return NoContent();
+                    }
+                    return Unauthorized();
                 }
-                return Unauthorized();
             }
-            return Forbid();
+            return Unauthorized();
         }
     }
 }
