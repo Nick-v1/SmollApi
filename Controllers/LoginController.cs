@@ -1,11 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SmollApi.Models;
 using SmollApi.Models.Dtos;
 using SmollApi.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace SmollApi.Controllers
@@ -23,6 +19,11 @@ namespace SmollApi.Controllers
             _tokenService = tokenService;
         }
 
+        /// <summary>
+        /// Is used to login to the web api
+        /// </summary>
+        /// <param name="login">UserLoginDto</param>
+        /// <returns>Action Result with a message</returns>
         [HttpPost("/api/login")]
         public async Task<IActionResult> Login([FromBody] UserLoginDto login)
         {

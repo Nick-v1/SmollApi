@@ -3,9 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SmollApi.Models;
 using SmollApi.Models.Dtos;
 using SmollApi.Repositories;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace SmollApi.Controllers
@@ -30,7 +28,12 @@ namespace SmollApi.Controllers
         [HttpGet]
         public async Task<IEnumerable<Product>> GetProducts()
         {
-            return await _productRepository.Get();
+            var products = await _productRepository.Get();
+            foreach (var item in products)
+            {
+                item.Phone = await _phoneRepository.Get(item.PhoneId);
+            }
+            return products;
         }
 
         [HttpGet("{id}")]
@@ -40,7 +43,9 @@ namespace SmollApi.Controllers
             if (productToGet == null)
                 return NotFound();
 
-            return productToGet;
+            productToGet.Phone = await _phoneRepository.Get(id);
+
+            return Ok(productToGet);
         }
 
         [HttpPost]

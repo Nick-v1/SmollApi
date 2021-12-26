@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using SmollApi.Models;
 using SmollApi.Models.Dtos;
 using SmollApi.Repositories;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 

@@ -5,7 +5,6 @@ using SmollApi.Models.Dtos;
 using SmollApi.Repositories;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace SmollApi.Controllers
@@ -102,7 +101,7 @@ namespace SmollApi.Controllers
 
                         return CreatedAtAction(nameof(CreateOrder), orderc);
                     }
-                    return Unauthorized("Something went wrong");
+                    return Unauthorized("You can create orders for other users");
                 }
             }
 

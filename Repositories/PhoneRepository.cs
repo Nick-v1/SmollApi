@@ -1,14 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SmollApi.Models;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace SmollApi.Repositories
 {
 
-        public interface IPhoneRepository          
+    public interface IPhoneRepository          
         {
             Task<IEnumerable<Phone>> Get();
             Task<Phone> Get(int phoneID);

@@ -1,17 +1,9 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Headers;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
 using SmollApi.Models;
 using SmollApi.Models.Dtos;
 using SmollApi.Repositories;
-using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace SmollApi.Controllers
@@ -86,7 +78,7 @@ namespace SmollApi.Controllers
                 if (isValid)
                 {
                     var roleclaim = _tokenService.GetClaim(token, "UserRole");
-                    if (roleclaim.Equals("Admin"))
+                    if (roleclaim.Equals("Admin") || roleclaim.Equals("Merchant"))
                     {
                         var phoneToChange = await _phoneRepository.Get(id);
                         if (phoneToChange == null) return NotFound();

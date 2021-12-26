@@ -6,11 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using SmollApi.Models.Dtos;
-using Microsoft.AspNetCore.Authorization;
-using System.Threading;
 using Microsoft.Extensions.Configuration;
-using Microsoft.AspNetCore.Http;
-using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace SmollApi.Controllers

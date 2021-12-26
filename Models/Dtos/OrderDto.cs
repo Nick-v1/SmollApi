@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace SmollApi.Models.Dtos
+﻿namespace SmollApi.Models.Dtos
 {
     public record OrderDto(int ProductId, int UserId);
 }
